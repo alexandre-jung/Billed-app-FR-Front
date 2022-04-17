@@ -1,8 +1,8 @@
 import VerticalLayout from './VerticalLayout.js'
 import ErrorPage from "./ErrorPage.js"
 import LoadingPage from "./LoadingPage.js"
-
 import Actions from './Actions.js'
+import { sortBillsByDate } from '../utils/Bills.js'
 
 const row = (bill) => {
   return (`
@@ -47,6 +47,8 @@ export default ({ data: bills, loading, error }) => {
   } else if (error) {
     return ErrorPage(error)
   }
+
+  sortBillsByDate(bills)
   
   return (`
     <div class='layout'>
