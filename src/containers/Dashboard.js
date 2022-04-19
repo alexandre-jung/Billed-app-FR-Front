@@ -72,9 +72,15 @@ export default class {
     this.document = document
     this.onNavigate = onNavigate
     this.store = store
-    $('#arrow-icon1').click((e) => this.handleShowTickets(e, bills, 1))
-    $('#arrow-icon2').click((e) => this.handleShowTickets(e, bills, 2))
-    $('#arrow-icon3').click((e) => this.handleShowTickets(e, bills, 3))
+
+    // Bound the handlers to new objects to duplicate counter,
+    // and set a `self` property to be able to access the class instance.
+    Array.from(Array(3).keys()).forEach(index => {
+      const selector = `#arrow-icon${index + 1}`
+      const handler = this.handleShowTickets.bind({ self: this })
+      $(selector).on('click', (_) => handler(_, bills, index + 1))
+    })
+
     new Logout({ localStorage, onNavigate })
   }
 
@@ -85,9 +91,17 @@ export default class {
     if (typeof $('#modaleFileAdmin1').modal === 'function') $('#modaleFileAdmin1').modal('show')
   }
 
-  handleEditTicket(e, bill, bills) {
-    if (this.counter === undefined || this.id !== bill.id) this.counter = 0
-    if (this.id === undefined || this.id !== bill.id) this.id = bill.id
+  handleEditTicket(_, bill, bills) {
+    const displayNewTicket = (
+      this.currentlyDisplayedId === undefined ||
+      this.currentlyDisplayedId !== bill.id
+    )
+
+    if (displayNewTicket) {
+      this.counter = 0
+      this.currentlyDisplayedId = bill.id
+    }
+
     if (this.counter % 2 === 0) {
       bills.forEach(b => {
         $(`#open-bill${b.id}`).css({ background: '#0D5AE5' })
@@ -95,7 +109,6 @@ export default class {
       $(`#open-bill${bill.id}`).css({ background: '#2A2B35' })
       $('.dashboard-right-container div').html(DashboardFormUI(bill))
       $('.vertical-navbar').css({ height: '150vh' })
-      this.counter ++
     } else {
       $(`#open-bill${bill.id}`).css({ background: '#0D5AE5' })
 
@@ -103,54 +116,65 @@ export default class {
         <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
       `)
       $('.vertical-navbar').css({ height: '120vh' })
-      this.counter ++
     }
-    $('#icon-eye-d').click(this.handleClickIconEye)
-    $('#btn-accept-bill').click((e) => this.handleAcceptSubmit(e, bill))
-    $('#btn-refuse-bill').click((e) => this.handleRefuseSubmit(e, bill))
+
+    // Moved duplicated line from the if/else.
+    this.counter ++
+
+    // handleClickIconEye() does not need to be bound.
+    $('#icon-eye-d').on('click', this.handleClickIconEye)
+    $('#btn-accept-bill').on('click', (_) => this.handleAcceptSubmit(_, bill))
+    $('#btn-refuse-bill').on('click', (_) => this.handleRefuseSubmit(_, bill))
   }
 
-  handleAcceptSubmit = (e, bill) => {
+  handleAcceptSubmit = (_, bill) => {
     const newBill = {
       ...bill,
       status: 'accepted',
       commentAdmin: $('#commentary2').val()
     }
     this.updateBill(newBill)
-    this.onNavigate(ROUTES_PATH['Dashboard'])
   }
 
-  handleRefuseSubmit = (e, bill) => {
+  handleRefuseSubmit = (_, bill) => {
     const newBill = {
       ...bill,
       status: 'refused',
       commentAdmin: $('#commentary2').val()
     }
     this.updateBill(newBill)
-    this.onNavigate(ROUTES_PATH['Dashboard'])
   }
 
-  handleShowTickets(e, bills, index) {
+  handleShowTickets(_, bills, index) {
+    // These `counter` and `index` properties belong to the object
+    // on which we bound this function in the constructor.
+    // In other words, they are duplicated for every list of tickets,
+    // so each list knows wether it is expanded or collapsed.
     if (this.counter === undefined || this.index !== index) this.counter = 0
     if (this.index === undefined || this.index !== index) this.index = index
+
     if (this.counter % 2 === 0) {
       $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)'})
       $(`#status-bills-container${this.index}`)
         .html(cards(filteredBills(bills, getStatus(this.index))))
-      this.counter ++
     } else {
       $(`#arrow-icon${this.index}`).css({ transform: 'rotate(90deg)'})
       $(`#status-bills-container${this.index}`)
         .html("")
-      this.counter ++
     }
 
-    bills.forEach(bill => {
-      $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills))
+    // Moved duplicated line from the if/else.
+    this.counter ++
+
+    // As this function has been bound to another object, with a `self` property
+    // representing the class instance, we need to call the handler on this.self
+    // to get the correct binding.
+    filteredBills(bills, getStatus(this.index)).forEach(bill => {
+      const selector = `#open-bill${bill.id}`
+      $(selector).on('click', (_) => this.self.handleEditTicket(_, bill, bills))
     })
 
     return bills
-
   }
 
   getBillsAllUsers = () => {
@@ -177,12 +201,27 @@ export default class {
   // not need to cover this function by tests
   /* istanbul ignore next */
   updateBill = (bill) => {
-    if (this.store) {
-    return this.store
-      .bills()
-      .update({data: JSON.stringify(bill), selector: bill.id})
-      .then(bill => bill)
-      .catch(console.log)
-    }
+    this.requestUpdateBill(bill).then(() => this.onNavigate(ROUTES_PATH['Dashboard']))
+  }
+
+  // not need to cover this function by tests
+  /* istanbul ignore next */
+  requestUpdateBill(bill) {
+    // Sometimes the UI was updating before the request completion,
+    // so we return a Promise to be able to update after the request.
+    return new Promise((resolve, reject) => {
+      if (!this.store) return
+      return this.store
+        .bills()
+        .update({data: JSON.stringify(bill), selector: bill.id})
+        .then(bill => {
+          resolve()
+          return bill
+        })
+        .catch(error => {
+          reject(error)
+          console.log(error)
+        })
+    })
   }
 }
