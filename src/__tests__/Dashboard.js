@@ -64,9 +64,9 @@ describe('Given I am connected as an Admin', () => {
       })
       document.body.innerHTML = DashboardUI({ data: { bills } })
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
-      const handleShowTickets2 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 2))
-      const handleShowTickets3 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 3))
+      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets.bind({ self: dashboard })(e, bills, 1))
+      const handleShowTickets2 = jest.fn((e) => dashboard.handleShowTickets.bind({ self: dashboard })(e, bills, 2))
+      const handleShowTickets3 = jest.fn((e) => dashboard.handleShowTickets.bind({ self: dashboard })(e, bills, 3))
 
       const icon1 = screen.getByTestId('arrow-icon1')
       const icon2 = screen.getByTestId('arrow-icon2')
@@ -107,7 +107,7 @@ describe('Given I am connected as an Admin', () => {
         document, onNavigate, store: null, bills:bills, localStorage: window.localStorage
       })
       document.body.innerHTML = DashboardUI({ data: { bills } })
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
+      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets.bind({ self: dashboard })(e, bills, 1))
       const icon1 = screen.getByTestId('arrow-icon1')
       icon1.addEventListener('click', handleShowTickets1)
       userEvent.click(icon1)
@@ -136,7 +136,7 @@ describe('Given I am connected as an Admin', () => {
       })
       document.body.innerHTML = DashboardUI({ data: { bills } })
 
-      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets(e, bills, 1))
+      const handleShowTickets1 = jest.fn((e) => dashboard.handleShowTickets.bind({ self: dashboard })(e, bills, 1))
       const icon1 = screen.getByTestId('arrow-icon1')
       icon1.addEventListener('click', handleShowTickets1)
       userEvent.click(icon1)
@@ -182,7 +182,8 @@ describe('Given I am connected as Admin, and I am on Dashboard page, and I click
       acceptButton.addEventListener("click", handleAcceptSubmit)
       fireEvent.click(acceptButton)
       expect(handleAcceptSubmit).toHaveBeenCalled()
-      const bigBilledIcon = screen.queryByTestId("big-billed-icon")
+      // User findBy* to leave the update enough time to complete.
+      const bigBilledIcon = screen.findByTestId("big-billed-icon")
       expect(bigBilledIcon).toBeTruthy()
     })
   })
@@ -206,7 +207,8 @@ describe('Given I am connected as Admin, and I am on Dashboard page, and I click
       refuseButton.addEventListener("click", handleRefuseSubmit)
       fireEvent.click(refuseButton)
       expect(handleRefuseSubmit).toHaveBeenCalled()
-      const bigBilledIcon = screen.queryByTestId("big-billed-icon")
+      // User findBy* to leave the update enough time to complete.
+      const bigBilledIcon = screen.findByTestId("big-billed-icon")
       expect(bigBilledIcon).toBeTruthy()
     })
   })
