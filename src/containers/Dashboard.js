@@ -202,8 +202,7 @@ export default class {
   }
 
   // not need to cover this function by tests
-  /* istanbul ignore next */
-  updateBill = (bill) => {
+  updateBill = (bill) => {  // istanbul ignore next
     this.requestUpdateBill(bill).then(() => this.onNavigate(ROUTES_PATH['Dashboard']))
   }
 
