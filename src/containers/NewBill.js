@@ -1,6 +1,16 @@
 import { ROUTES_PATH } from '../constants/routes.js'
 import Logout from "./Logout.js"
 
+const VALID_EXTENSIONS = ['jpg', 'jpeg', 'png']
+
+const INVALID_EXTENSION_MESSAGE = `
+Invalid file extension.
+Valid extensions are:
+.jpg
+.jpeg
+.png
+`
+
 export default class NewBill {
   constructor({ document, onNavigate, store, localStorage }) {
     this.document = document
@@ -15,6 +25,7 @@ export default class NewBill {
     this.billId = null
     new Logout({ document, localStorage, onNavigate })
   }
+
   handleChangeFile = e => {
     e.preventDefault()
     const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
@@ -25,21 +36,13 @@ export default class NewBill {
     formData.append('file', file)
     formData.append('email', email)
 
-    this.store
-      .bills()
-      .create({
-        data: formData,
-        headers: {
-          noContentType: true
-        }
-      })
-      .then(({fileUrl, key}) => {
-        console.log(fileUrl)
-        this.billId = key
-        this.fileUrl = fileUrl
-        this.fileName = fileName
-      }).catch(error => console.error(error))
+    if (NewBill.fileExtensionIsValid(fileName)) {
+      this.createBill(formData, fileName)
+    } else {
+      alert(INVALID_EXTENSION_MESSAGE)
+    }
   }
+
   handleSubmit = e => {
     e.preventDefault()
     console.log('e.target.querySelector(`input[data-testid="datepicker"]`).value', e.target.querySelector(`input[data-testid="datepicker"]`).value)
@@ -57,12 +60,31 @@ export default class NewBill {
       fileName: this.fileName,
       status: 'pending'
     }
+
     this.updateBill(bill)
     this.onNavigate(ROUTES_PATH['Bills'])
   }
 
   // not need to cover this function by tests
-  updateBill = (bill) => {
+  createBill = (formData, fileName) => {  // istanbul ignore next
+    this.store
+      .bills()
+      .create({
+        data: formData,
+        headers: {
+          noContentType: true
+        }
+      })
+      .then(({fileUrl, key}) => {
+        console.log(fileUrl)
+        this.billId = key
+        this.fileUrl = fileUrl
+        this.fileName = fileName
+      }).catch(error => console.error(error))
+  }
+
+  // not need to cover this function by tests
+  updateBill = (bill) => {  // istanbul ignore next
     if (this.store) {
       this.store
       .bills()
@@ -72,5 +94,17 @@ export default class NewBill {
       })
       .catch(error => console.error(error))
     }
+  }
+
+  /**
+   * Validate a file extension.
+   *
+   * @param { String } fileName
+   * @returns boolean
+   */
+  static fileExtensionIsValid(fileName) {
+    const splitedFileName = fileName.split('.');
+    const fileExtension = splitedFileName[splitedFileName.length - 1]
+    return fileExtension && VALID_EXTENSIONS.includes(fileExtension.toLowerCase())
   }
 }

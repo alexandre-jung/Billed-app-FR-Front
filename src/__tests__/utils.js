@@ -1,4 +1,5 @@
 import { sortBillsByDate } from "../utils/Bills"
+import NewBill from "../containers/NewBill"
 
 describe("bill utils unit tests", () => {
   it("should order bills from the latest to the earliest", () => {
@@ -19,4 +20,19 @@ describe("bill utils unit tests", () => {
     sortBillsByDate(bills)
     expect(bills).toEqual(sortedBills)
   })
+})
+
+describe('NewBill.fileExtensionIsValid unit tests', () => {
+  test.each([
+    ['picture.webp', false],
+    ['picture.pdf', false],
+    ['picture.jpg', true],
+    ['picture.jpeg', true],
+    ['picture.png', true],
+  ])(
+    "NewBill.fileExtensionIsValid('%s') is %p",
+    (filename, expected) => {
+      expect(NewBill.fileExtensionIsValid(filename)).toBe(expected)
+    }
+  )
 })
