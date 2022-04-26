@@ -1,6 +1,16 @@
 import { ROUTES_PATH } from '../constants/routes.js'
 import Logout from "./Logout.js"
 
+const VALID_EXTENSIONS = ['.jpg', '.jpeg', '.png']
+
+const INVALID_EXTENSION_MESSAGE = `
+Invalid file extension.
+Valid extensions are:
+.jpg
+.jpeg
+.png
+`
+
 export default class NewBill {
   constructor({ document, onNavigate, store, localStorage }) {
     this.document = document
@@ -10,67 +20,94 @@ export default class NewBill {
     formNewBill.addEventListener("submit", this.handleSubmit)
     const file = this.document.querySelector(`input[data-testid="file"]`)
     file.addEventListener("change", this.handleChangeFile)
-    this.fileUrl = null
-    this.fileName = null
-    this.billId = null
     new Logout({ document, localStorage, onNavigate })
   }
-  handleChangeFile = e => {
-    e.preventDefault()
-    const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
-    const filePath = e.target.value.split(/\\/g)
-    const fileName = filePath[filePath.length-1]
-    const formData = new FormData()
-    const email = JSON.parse(localStorage.getItem("user")).email
-    formData.append('file', file)
-    formData.append('email', email)
 
+  /**
+   * Handles file selection and displays an error
+   * if the file extension is invalid.
+   * 
+   * @param { Event } event 
+   */
+  handleChangeFile = event => {
+    event.preventDefault()
+    if (!NewBill.extensionIsValid(this.formData.get('file').name)) {
+      alert(INVALID_EXTENSION_MESSAGE)
+    }
+  }
+
+  /**
+   * Handles form submit, validates data, and finally calls
+   * the bill creation function if everything is ok.
+   * 
+   * @param { SubmitEvent } event
+   * @returns 
+   */
+  handleSubmit = event => {
+    event.preventDefault()
+    const formData = this.formData
+    if (NewBill.extensionIsValid(formData.get('file').name)) {
+      this.createBill(formData)
+      return this.onNavigate(ROUTES_PATH['Bills'])
+    }
+    alert(`The form is not valid.\n${INVALID_EXTENSION_MESSAGE}`)
+  }
+
+  /**
+   * Retrieve form data, and sets additional parameters.
+   */
+  get formData() {
+    const formElement = this.document.querySelector('form[data-testid="form-new-bill"]')
+    const formData = new FormData(formElement)
+    formData.set('email', JSON.parse(localStorage.getItem("user")).email)
+    formData.set('status', 'pending')
+    return formData
+  }
+
+  /**
+   * Send POST request for bill creation and navigates
+   * to the bill dashboard on success.
+   *
+   * @param { FormData } billFormData 
+   */
+  createBill = (billFormData) => {  // istanbul ignore next
     this.store
       .bills()
       .create({
-        data: formData,
+        data: billFormData,
         headers: {
           noContentType: true
         }
       })
-      .then(({fileUrl, key}) => {
-        console.log(fileUrl)
-        this.billId = key
-        this.fileUrl = fileUrl
-        this.fileName = fileName
-      }).catch(error => console.error(error))
-  }
-  handleSubmit = e => {
-    e.preventDefault()
-    console.log('e.target.querySelector(`input[data-testid="datepicker"]`).value', e.target.querySelector(`input[data-testid="datepicker"]`).value)
-    const email = JSON.parse(localStorage.getItem("user")).email
-    const bill = {
-      email,
-      type: e.target.querySelector(`select[data-testid="expense-type"]`).value,
-      name:  e.target.querySelector(`input[data-testid="expense-name"]`).value,
-      amount: parseInt(e.target.querySelector(`input[data-testid="amount"]`).value),
-      date:  e.target.querySelector(`input[data-testid="datepicker"]`).value,
-      vat: e.target.querySelector(`input[data-testid="vat"]`).value,
-      pct: parseInt(e.target.querySelector(`input[data-testid="pct"]`).value) || 20,
-      commentary: e.target.querySelector(`textarea[data-testid="commentary"]`).value,
-      fileUrl: this.fileUrl,
-      fileName: this.fileName,
-      status: 'pending'
-    }
-    this.updateBill(bill)
-    this.onNavigate(ROUTES_PATH['Bills'])
+      .then((response) => {
+        this.billId = response.key
+        this.fileUrl = response.fileUrl
+        this.fileName = response.fileName
+        this.onNavigate(ROUTES_PATH['Bills'])
+      }).catch(console.error)
   }
 
-  // not need to cover this function by tests
-  updateBill = (bill) => {
-    if (this.store) {
-      this.store
-      .bills()
-      .update({data: JSON.stringify(bill), selector: this.billId})
-      .then(() => {
-        this.onNavigate(ROUTES_PATH['Bills'])
-      })
-      .catch(error => console.error(error))
-    }
+  /**
+   * Returns the extension of a file name.
+   * 
+   * @param { String } fileName
+   * @returns { ?String }
+   */
+  static getExtension(fileName) {
+    if (!fileName) return null
+    const lastDotIndex = fileName.lastIndexOf('.')
+    const extension = lastDotIndex != -1 ? fileName.slice(lastDotIndex) : ''
+    return extension
+  }
+
+  /**
+   * Validate a file extension.
+   *
+   * @param { String } fileName
+   */
+  static extensionIsValid(fileName) {
+    const extension = this.getExtension(fileName)
+    if (!extension) return false
+    return VALID_EXTENSIONS.includes(extension.toLowerCase())
   }
 }
