@@ -3,12 +3,16 @@ import Logout from "./Logout.js"
 
 const VALID_EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
-const INVALID_EXTENSION_MESSAGE = `
+export const INVALID_EXTENSION_MESSAGE = `
 Invalid file extension.
 Valid extensions are:
 .jpg
 .jpeg
 .png
+`
+
+export const INVALID_FORM_BAD_FILE = `
+The form is not valid.\n${INVALID_EXTENSION_MESSAGE}
 `
 
 export default class NewBill {
@@ -45,12 +49,12 @@ export default class NewBill {
    */
   handleSubmit = event => {
     event.preventDefault()
-    const formData = this.formData
-    if (NewBill.extensionIsValid(formData.get('file').name)) {
-      this.createBill(formData)
-      return this.onNavigate(ROUTES_PATH['Bills'])
+    if (NewBill.extensionIsValid(this.formData.get('file').name)) {
+      this.createBill(this.formData)
+      if (this.onNavigate) this.onNavigate(ROUTES_PATH['Bills'])
+    } else {
+      alert(INVALID_FORM_BAD_FILE)
     }
-    alert(`The form is not valid.\n${INVALID_EXTENSION_MESSAGE}`)
   }
 
   /**
@@ -59,8 +63,15 @@ export default class NewBill {
   get formData() {
     const formElement = this.document.querySelector('form[data-testid="form-new-bill"]')
     const formData = new FormData(formElement)
+
     formData.set('email', JSON.parse(localStorage.getItem("user")).email)
     formData.set('status', 'pending')
+
+    // FormData does not retrieve the file informations when we set it programmatically in Jest,
+    // so we have to manually set it in order to make it testable.
+    const fileInput = formElement.querySelector('[name="file"]')
+    formData.set('file', fileInput.files[0])
+
     return formData
   }
 

@@ -1,20 +1,34 @@
 {
   "scripts": {
     "start": "live-server",
-    "test": "jest --coverage --noStackTrace --silent"
+    "test": "jest --coverage --noStackTrace --silent",
+    "report": "live-server --open=./report/test-report.html",
+    "coverage": "live-server --open=./coverage/lcov-report"
   },
   "jest": {
     "verbose": false,
-    "setupFiles": [
-      "./setup-jest.js"
+    "setupFilesAfterEnv": [
+      "./setupTests.js"
     ],
     "collectCoverageFrom": [
-      "**/*.{js,jsx}",
+      "src/**/*.js",
       "!**/app/**",
       "!**/assets/**",
-      "!**/external/**",
       "!**/fixtures/**",
-      "!**/lcov-report/**"
+      "!**/lcov-report/**",
+      "!**/constants/usersTest.js",
+      "!**/setupTests.js"
+    ],
+    "reporters": [
+      "default",
+      [
+        "./node_modules/jest-html-reporter",
+        {
+          "pageTitle": "Billed Test Report",
+          "logo": "../etc/billed-report-logo.png",
+          "outputPath": "./report/test-report.html"
+        }
+      ]
     ]
   },
   "type": "module",
