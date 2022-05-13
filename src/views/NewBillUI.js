@@ -37,14 +37,16 @@ export default () => {
                     <label for="amount" class="bold-label">Montant TTC</label>
                     <input required type="number" class="form-control blue-border input-icon input-icon-right" data-testid="amount" placeholder="348" name="amount" />
                   </div>
-                  <div class="col-half-row">
-                    <div class="flex-col"> 
-                      <label for="vat" class="bold-label">TVA</label>
-                      <input type="number" class="form-control blue-border" data-testid="vat" placeholder="70" name="vat" />
-                    </div>
-                    <div class="flex-col">
-                      <label for="pct" class="white-text">%</label>
-                      <input required type="number" class="form-control blue-border" data-testid="pct" placeholder="20" name="pct" />
+                  <div class="col-half">
+                    <div class="col-half-row">
+                      <div class="flex-col">
+                        <label for="vat" class="bold-label">TVA</label>
+                        <input required type="number" class="form-control blue-border" data-testid="vat" placeholder="70" name="vat" />
+                      </div>
+                      <div class="flex-col">
+                        <label for="pct" class="white-text">%</label>
+                        <input required type="number" class="form-control blue-border" data-testid="pct" placeholder="20" name="pct" />
+                      </div>
                     </div>
                   </div>
                 </div>

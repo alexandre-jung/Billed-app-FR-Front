@@ -11,7 +11,6 @@
 .col-half-row {
   display:flex;
   width: 75%;
-  margin-left: 20px;
   margin-top: 16px;
 }
 
@@ -29,7 +28,7 @@ label {
   line-height: 16px;
 }
 
-.flex-col {
+.flex-col:not(:first-child) {
   margin-left: 50px;
 }
 

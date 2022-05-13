@@ -5,15 +5,23 @@
 import { fireEvent, screen } from "@testing-library/dom"
 import "@testing-library/jest-dom"
 import userEvent from "@testing-library/user-event"
+import mockStore from '../__mocks__/store'
 import router from "../app/Router"
-import { ROUTES_PATH } from "../constants/routes"
+import { ROUTES, ROUTES_PATH } from "../constants/routes"
 import NewBill, {
   INVALID_EXTENSION_MESSAGE,
   INVALID_FORM_BAD_FILE
 } from '../containers/NewBill'
 import NewBillUI from "../views/NewBillUI"
-import store from '../__mocks__/store'
+import store from '../app/store'
 
+
+// It is working only if we import mockStore BEFORE router.
+jest.mock("../app/store", () => mockStore)
+
+function onNavigate(pathname) {
+  document.body.innerHTML = ROUTES({ pathname })
+}
 
 describe("Given I am connected as an employee", () => {
   describe("When I am on NewBill Page", () => {
@@ -122,7 +130,7 @@ describe("Given I am connected as an employee", () => {
     document.body.innerHTML = NewBillUI()
     new NewBill({
       document,
-      onNavigate: null,
+      onNavigate,
       store: store,
       localStorage: window.localStorage,
     })
